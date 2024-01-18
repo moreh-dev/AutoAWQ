@@ -1,6 +1,10 @@
 import gc
-import torch
+
 import accelerate
+import torch
+from torch import nn
+
+from transformers.pytorch_utils import Conv1D
 
 
 def get_module_by_name_suffix(model, module_name: str):
@@ -9,7 +13,7 @@ def get_module_by_name_suffix(model, module_name: str):
             return module
 
 def simple_dispatch_model(model, device_map):
-    from accelerate.hooks import add_hook_to_module, AlignDevicesHook
+    from accelerate.hooks import AlignDevicesHook, add_hook_to_module
 
     if "" in device_map:
         d = device_map[""]
@@ -65,3 +69,23 @@ def compute_memory_used_pct(device):
     memory_used = torch.cuda.max_memory_allocated(device) / (1024 ** 3)
     memory_pct = memory_used / (torch.cuda.get_device_properties(device).total_memory / (1024 ** 3)) * 100
     return memory_pct
+
+def replace_conv1d_with_linear(model):
+    """
+    Recursively replace all Conv1D layers inside the given Pytorch Model with Linear layers while keeping the original weights.
+    :param model: The target model whose Conv1D layers will be converted to Linear layers
+    """
+    for name, child in model.named_children():
+        if isinstance(child, Conv1D):
+            # Extract weight and bias from Conv1D layer
+            w = child.weight.data
+            b = child.bias.data
+
+            # Initialize a Linear Layer with extracted weights & biases
+            lin = nn.Linear(w.shape[0], w.shape[1])
+            lin.weight.data = w.t()
+            lin.bias.data = b
+
+            setattr(model, name, lin)
+        else:
+            replace_conv1d_with_linear(child)

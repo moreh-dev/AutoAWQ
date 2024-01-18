@@ -36,6 +36,7 @@ from awq.modules.act import ScaledActivation
 from awq.modules.linear import WQLinear_GEMM, WQLinear_GEMV
 from awq.quantize.quantizer import AwqQuantizer
 from awq.utils.module import get_named_linears, set_op_by_name
+from awq.utils.utils import replace_conv1d_with_linear
 
 # Since we support different `AutoModelForxxx` from transformers 
 # we need to define a custom mapping dict as below:
@@ -57,6 +58,7 @@ TRANSFORMERS_AUTO_MAPPING_DICT = {
     "qwen": "AutoModelForCausalLM",
     "baichuan": "AutoModelForCausalLM",
     "llava": "AutoModelForVision2Seq",
+    "gpt2": "AutoModelForCausalLM",
 }
 
 class BaseAWQForCausalLM(nn.Module):
@@ -216,6 +218,7 @@ class BaseAWQForCausalLM(nn.Module):
         # [STEP 3] Load model
         with init_empty_weights():
             model = target_cls.from_config(config=config, torch_dtype=torch_dtype, trust_remote_code=trust_remote_code)
+            replace_conv1d_with_linear(model)
         
         # Prepare WQLinear layers, replace nn.Linear
         self._load_quantized_modules(self, model, quant_config, quant_config.version)

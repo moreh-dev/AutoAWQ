@@ -13,3 +13,4 @@ from .qwen import QwenAWQForCausalLM
 from .baichuan import BaichuanAWQForCausalLM
 from .llava import LlavaAWQForCausalLM
 from .mixtral import MixtralAWQForCausalLM
+from .gpt2 import GPT2AWQForCausalLM
