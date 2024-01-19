@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 
 model_path = "gpt2"
 quant_path = "gpt2-awq"
-quant_config = {"zero_point": True, "q_group_size": 128, "w_bit": 4, "version": "GEMM"}
+quant_config = {"zero_point": True, "q_group_size": 128, "w_bit": 4, "version": "GEMV"}
 
 # Load model
 # NOTE: pass safetensors=True to load safetensors
